@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>DNA Analysis Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Familjen+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: forensic lab review tool — slim header, target tabs, level switcher, one column of question cards */
+:root{
+  --paper:#f3f6f6; --surface:#ffffff; --ink:#13212a; --muted:#566872; --line:#d6dfe2; --line-strong:#9aabb2;
+  --grid:#e3eaec; --band:#eef3f4; --accent:#0e6a73; --accent-soft:#dcefef;
+  --pur:#7a3fb0; --pyr:#c46a12; --cut:#c5302b;
+  --good:#1d7a4c; --good-soft:#e1f2e8; --bad:#b0361e; --bad-soft:#f8e5df;
+  --f-display:"Familjen Grotesk","Segoe UI",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --paper:#0e1518; --surface:#152025; --ink:#e5edef; --muted:#93a5ac; --line:#263840; --line-strong:#4c626b;
+  --grid:#1e2d33; --band:#18262c; --accent:#53b6be; --accent-soft:#16363a;
+  --pur:#b98ae6; --pyr:#f0a35a; --cut:#f0716a;
+  --good:#52c48c; --good-soft:#163a2a; --bad:#f2876e; --bad-soft:#3d221b; color-scheme:dark}}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 var(--f-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(48px + env(safe-area-inset-bottom,0px))}
+.wrap{max-width:880px;margin:0 auto}
+header{padding-block:28px 8px}
+.eyebrow{font:600 12px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font:700 clamp(30px,5vw,42px)/1.05 var(--f-display);margin:8px 0 10px;letter-spacing:-.01em;text-wrap:balance}
+.std{color:var(--muted);max-width:64ch;margin:0}
+.std b{color:var(--ink)}
+
+nav.lt{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:22px 0 0}
+nav.lt button{all:unset;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+nav.lt button:focus-visible,.lv button:focus-visible,.btn:focus-visible,.opt:focus-visible,.gap:focus-visible,.stepbtn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+nav.lt button[aria-selected="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.ltk{font:600 12px/1 var(--f-mono);color:var(--accent);letter-spacing:.05em}
+.ltn{font:600 15px/1.2 var(--f-display);overflow-wrap:anywhere}
+.meter{height:5px;border-radius:3px;background:var(--grid);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+@media (max-width:620px){nav.lt{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.lthead{margin:30px 0 14px}
+.lthead h2{font:700 26px/1.15 var(--f-display);margin:0 0 6px;text-wrap:balance}
+.lthead p{margin:0;color:var(--muted);font-style:italic;max-width:64ch}
+.lv{display:flex;flex-wrap:wrap;gap:6px;margin:16px 0 20px;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:12px;width:fit-content;max-width:100%}
+.lv button{all:unset;cursor:pointer;padding:8px 14px;border-radius:8px;font:600 14px/1.2 var(--f-display);display:flex;align-items:center;gap:8px}
+.lv button[aria-selected="true"]{background:var(--accent);color:var(--surface)}
+.lv small{font:400 12px var(--f-mono);opacity:.8}
+
+.qs{display:flex;flex-direction:column;gap:16px}
+.q{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px 22px;min-width:0}
+.q.ok{border-left:4px solid var(--good)} .q.no{border-left:4px solid var(--bad)}
+.qhead{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.qnum{font:600 13px/1 var(--f-mono);background:var(--accent-soft);color:var(--accent);border-radius:6px;padding:5px 8px}
+.qtype{font:600 11px/1 var(--f-mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.qstat{margin-left:auto;font:600 13px/1 var(--f-mono)}
+.qstat.ok{color:var(--good)} .qstat.no{color:var(--bad)}
+.prompt{margin:0 0 14px;font-size:17px;max-width:68ch}
+.fig{margin:4px 0 16px;overflow-x:auto}
+.fig svg{display:block;width:100%;height:auto;max-width:100%}
+
+.opts{display:grid;gap:8px}
+.opt{all:unset;cursor:pointer;border:1px solid var(--line);border-radius:10px;padding:11px 14px;display:flex;gap:12px;align-items:flex-start;min-width:0}
+.opt:hover:not([disabled]){border-color:var(--accent);background:var(--accent-soft)}
+.opt .k{font:600 13px/1.5 var(--f-mono);color:var(--muted);flex:none}
+.opt[disabled]{cursor:default}
+.opt.right{border-color:var(--good);background:var(--good-soft)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.fb{margin-top:12px;padding:12px 14px;border-radius:10px;background:var(--band);font-size:15px}
+.fb b{font-family:var(--f-display)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px}
+.btn{all:unset;cursor:pointer;font:600 14px/1 var(--f-display);padding:11px 16px;border-radius:9px;background:var(--accent);color:var(--surface)}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--line-strong)}
+.btn:hover{filter:brightness(1.08)}
+.btn[disabled]{opacity:.45;cursor:default;filter:none}
+textarea,input[type=text],input[type=number],select{font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--line-strong);border-radius:8px;padding:9px 11px;max-width:100%}
+textarea{width:100%;min-height:96px;resize:vertical}
+select{padding:7px 8px}
+select.right,input.right{border-color:var(--good);box-shadow:0 0 0 2px var(--good-soft)}
+select.wrong,input.wrong{border-color:var(--bad);box-shadow:0 0 0 2px var(--bad-soft)}
+.model{margin-top:12px;border:1px dashed var(--line-strong);border-radius:10px;padding:14px}
+.model h4{margin:0 0 6px;font:600 14px var(--f-display)}
+.checks{display:grid;gap:6px;margin:10px 0 0;padding:0;list-style:none}
+.checks label{display:flex;gap:8px;align-items:flex-start}
+
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 12px/1.2 var(--f-mono);text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+td.num,.mono{font-variant-numeric:tabular-nums;font-family:var(--f-mono);font-size:14px}
+.fix{display:block;font-size:12.5px;color:var(--good);margin-top:4px}
+
+.order{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.order li{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+.order li span.t{flex:1;min-width:0}
+.order li .pos{font:600 13px var(--f-mono);color:var(--muted);width:22px;flex:none}
+.order li.right{border-color:var(--good);background:var(--good-soft)}
+.order li.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.mv{all:unset;cursor:pointer;width:30px;height:30px;display:grid;place-items:center;border:1px solid var(--line);border-radius:7px;font-size:14px;flex:none}
+.mv:focus-visible{outline:3px solid var(--accent)}
+
+/* labeling diagrams */
+.labwrap{display:grid;gap:16px}
+.lablist{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px 16px}
+.lablist label{display:flex;gap:8px;align-items:center;min-width:0}
+.lablist label b{font:600 13px var(--f-mono);width:26px;flex:none;text-align:right}
+.lablist select{flex:1;min-width:0}
+.lab .badge circle{fill:var(--surface);stroke:var(--accent);stroke-width:1.5}
+.lab .badge.hl circle{fill:var(--accent)} .lab .badge.hl text{fill:var(--surface)}
+.lab .badge text{fill:var(--ink);font:600 12px var(--f-mono)}
+.lab .lead{stroke:var(--accent);stroke-width:1}
+.lab .ln{fill:none;stroke:var(--line-strong);stroke-width:1.6}
+.lab .soft{fill:none;stroke:var(--grid);stroke-width:1.4}
+.lab .bt{font:700 15px var(--f-display);fill:var(--ink)}
+.lab .cap{fill:var(--muted);font:12px var(--f-body)}
+.lab .pur{fill:var(--pur);fill-opacity:.16;stroke:var(--pur);stroke-width:1.4}
+.lab .pyr{fill:var(--pyr);fill-opacity:.16;stroke:var(--pyr);stroke-width:1.4}
+.lab .ph{fill:var(--line-strong);fill-opacity:.35;stroke:var(--line-strong);stroke-width:1.3}
+.lab .sug{fill:var(--surface);stroke:var(--ink);stroke-width:1.3}
+.lab .hb{stroke:var(--ink);stroke-width:1.3;stroke-dasharray:4 3}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px;margin:0 0 6px;color:var(--muted)}
+.legend span{display:inline-flex;gap:6px;align-items:center}
+.sw{width:14px;height:14px;border-radius:3px;display:inline-block}
+
+/* complement builder */
+.strand{font:600 20px/1 var(--f-mono);letter-spacing:.32em;overflow-wrap:anywhere;margin:0}
+.strand .lb{font:600 12px var(--f-mono);letter-spacing:.05em;color:var(--muted);display:block;margin-bottom:6px}
+.compin{font:600 20px var(--f-mono);letter-spacing:.32em;text-transform:uppercase;width:100%}
+.diff{font:600 20px/1.6 var(--f-mono);letter-spacing:.32em;overflow-wrap:anywhere}
+.diff .ok{color:var(--good)} .diff .no{color:var(--bad);text-decoration:underline}
+
+/* restriction digest */
+.seq{display:flex;flex-wrap:wrap;row-gap:10px;align-items:stretch;padding:12px;background:var(--paper);border:1px solid var(--line);border-radius:10px}
+.base{font:600 18px/36px var(--f-mono);width:20px;text-align:center}
+.gap{all:unset;cursor:pointer;width:12px;height:36px;position:relative;flex:none}
+.gap::after{content:"";position:absolute;left:5px;top:4px;bottom:4px;width:2px;border-radius:1px;background:transparent}
+.gap:hover::after{background:var(--line-strong)}
+.gap.on::after{background:var(--cut);top:0;bottom:0;width:3px;left:4.5px}
+.gap.miss::after{background:transparent;border-left:2px dashed var(--good);top:0;bottom:0}
+.gap.extra::after{background:var(--bad)}
+.gap.good::after{background:var(--good)}
+.gap[disabled]{cursor:default}
+.frags{display:grid;gap:6px;margin-top:12px}
+.fragrow{display:grid;grid-template-columns:92px minmax(0,1fr);gap:10px;align-items:center;font-size:14px}
+.fragbar{display:flex;gap:3px;min-width:0}
+.fragbar span{height:20px;border-radius:4px;background:var(--accent-soft);border:1px solid var(--accent);font:600 11px/18px var(--f-mono);color:var(--accent);text-align:center;min-width:16px;overflow:hidden}
+
+/* explorer */
+.explore{display:grid;gap:14px}
+.sliders label{display:grid;gap:4px;font-size:14px}
+.sliders output{font:600 14px var(--f-mono);color:var(--accent)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.box{background:var(--paper);border:1px solid var(--line);border-radius:10px}
+.box svg{display:block;width:100%;height:auto}
+.readout{display:flex;flex-wrap:wrap;gap:8px}
+.pill{font:600 12.5px var(--f-mono);padding:5px 9px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+.steps{display:flex;flex-wrap:wrap;gap:6px}
+.stepbtn{all:unset;cursor:pointer;border:1px solid var(--line);border-radius:8px;padding:7px 11px;font-size:14px}
+.stepbtn[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
+.pcr .s1{stroke:var(--ink);stroke-width:3} .pcr .s2{stroke:var(--accent);stroke-width:3}
+.pcr .pr{stroke:var(--pyr);stroke-width:5} .pcr .rung{stroke:var(--line-strong);stroke-width:1.4}
+.pcr text{fill:var(--muted);font:12px var(--f-body)}
+.pcr .tt{fill:var(--ink);font:700 15px var(--f-display)}
+
+.ref{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px 22px}
+.ref h3{margin:0 0 8px;font:700 18px var(--f-display)}
+.ref ul{margin:0 0 14px;padding-left:20px;display:grid;gap:4px}
+.ref code{font:600 15px var(--f-mono);white-space:nowrap}
+.ref code i{color:var(--cut);font-style:normal}
+
+.res{display:grid;gap:16px}
+.rescard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+.rescard h3{margin:0 0 10px;font:700 18px var(--f-display)}
+.lvrow{display:grid;grid-template-columns:90px minmax(0,1fr) 64px;gap:12px;align-items:center;margin:6px 0;font-size:14px}
+.lvrow .meter{height:8px}
+.lvrow .sc{font:600 13px var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
+.rates{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;font-size:14px}
+.rates label{display:flex;gap:8px;align-items:center}
+.note{color:var(--muted);font-size:14px}
+pre.out{white-space:pre-wrap;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px;font:13px/1.5 var(--f-mono);margin:10px 0 0;max-width:100%;overflow-x:auto}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* gels */
+.photo,.gx,.pgel{display:block;width:100%;height:auto}
+.photo .ax,.pgel .ax,.gx .ax{fill:var(--muted);font:12px var(--f-mono)}
+.photo .lh{fill:var(--ink);font:600 12.5px var(--f-display)}
+.lh2{fill:var(--ink);font:600 13px var(--f-display)}
+.gx .pol{fill:var(--ink);font:700 22px var(--f-display)}
+.lab .lead{stroke:var(--accent);stroke-width:1.2}
+.seq.ds .gap{height:56px}
+.base.ds{display:flex;flex-direction:column;line-height:28px;font-size:17px}
+.base.ds i{font-style:normal;color:var(--muted);font-weight:400}
+.plotfig{overflow-x:auto}
+.pgel .hit{fill:transparent;cursor:pointer}
+.pgel .hit:hover{fill:var(--accent-soft);fill-opacity:.6}
+.pgel .plane{outline:none}
+.pgel .plane:focus-visible .hit{fill:var(--accent-soft);fill-opacity:.35}
+.pgel .cur line{stroke:var(--accent);stroke-width:1.5;stroke-dasharray:4 3}
+.pgel .cur text{fill:var(--accent);font:600 12px var(--f-mono)}
+.pgel .band{fill:var(--accent)}
+.pgel .band.good{fill:var(--good)}
+.pgel .band.extra{fill:var(--bad)}
+.pgel .band.miss{fill:none;stroke:var(--good);stroke-width:1.6;stroke-dasharray:4 3}
+.plist{display:grid;gap:4px;font-size:15px;margin-top:4px}
+.ref code i{color:var(--cut);font-style:normal}
+</style></head><body>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">PLTW Principles of Biomedical Science · Activity 1.1.6</div>
+  <h1>DNA Analysis Review</h1>
+  <p class="std"><b>Standard:</b> Select and use appropriate tools, techniques, and/or technologies to analyze genetic information and diagnose disease. Work through each learning target from Recall to Analyze. Answers check instantly, and your progress is saved on this device.</p>
+  <nav class="lt" id="ltnav" role="tablist"></nav>
+</header>
+<main id="main"></main>
+</div>
+
+<script>
+/* ---------- state ---------- */
+const KEY='dna-analysis-review-v2';
+const fresh=()=>({r:{},d:{},t:{},o:{},c:{},rev:{},rate:{},name:'',view:'lt1',lvl:{}});
+let S=fresh();
+try{const s=JSON.parse(localStorage.getItem(KEY)||'null'); if(s) S=Object.assign(S,s);}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- DNA helpers ---------- */
+const PAIR={A:'T',T:'A',G:'C',C:'G'};
+const comp=s=>s.split('').map(b=>PAIR[b]).join('');
+const ENZ={EcoRI:{site:'GAATTC',cut:1,show:'G^AATTC',ends:'Sticky'},HaeIII:{site:'GGCC',cut:2,show:'GG^CC',ends:'Blunt'},HindIII:{site:'AAGCTT',cut:1,show:'A^AGCTT',ends:'Sticky'}};
+function cutsOf(seq,enz){const e=ENZ[enz],out=[];for(let i=0;i+e.site.length<=seq.length;i++)if(seq.substr(i,e.site.length)===e.site)out.push(i+e.cut);return out}
+function fragsOf(len,cuts){const p=[0,...cuts.slice().sort((a,b)=>a-b),len];return p.slice(1).map((v,i)=>v-p[i])}
+const fragsSeq=(seq,enz)=>fragsOf(seq.length,cutsOf(seq,enz));
+const uniq=a=>[...new Set(a)].sort((x,y)=>y-x);
+
+/* ---------- schematic gel (for labeling) ---------- */
+function gelDiagram(){
+  const X=[188,265,342,418,495,572],W=44;
+  const bands=[[120,150,185,225,270,310],[106,200,260],[140,230],[170,215,290],[128,250,332],[160,275]];
+  let s=`<svg class="lab" viewBox="0 0 760 392" role="img" aria-label="Diagram of a gel electrophoresis setup with eight numbered parts">
+  <rect x="150" y="26" width="460" height="10" rx="3" fill="var(--line-strong)"/>
+  <rect x="150" y="362" width="460" height="10" rx="3" fill="var(--line-strong)"/>
+  <rect x="150" y="60" width="460" height="292" rx="6" fill="var(--band)" stroke="var(--line-strong)" stroke-width="1.4"/>`;
+  X.forEach((x,i)=>{s+=`<rect x="${x-W/2}" y="70" width="${W}" height="10" rx="2" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.3"/>`;
+    bands[i].forEach(y=>s+=`<rect x="${x-W/2}" y="${y-3}" width="${W}" height="6" rx="2" fill="${i===0?'var(--muted)':'var(--accent)'}"/>`)});
+  s+=`<rect x="382" y="64" width="72" height="282" rx="6" fill="none" stroke="var(--pyr)" stroke-width="1.6" stroke-dasharray="6 4"/>`;
+  s+=`<path d="M660 96V318M651 306L660 320L669 306" fill="none" stroke="var(--ink)" stroke-width="2.4" stroke-linecap="round"/>`;
+  return s}
+const GEL_PARTS=['Well','Negative electrode (−)','Positive electrode (+)','Direction DNA moves','DNA ladder','Lane','Largest fragment','Smallest fragment'];
+const GEL_B=[[110,75,166,75],[110,31,150,31],[110,367,150,367],[708,207,664,207],[110,210,164,210],[418,322,418,322],[305,106,287,106],[535,332,517,332]];
+const gelLab=()=>withBadges(gelDiagram(),GEL_B);
+function withBadges(svg,B){return svg+B.map(b=>`<line class="lead" x1="${b[0]}" y1="${b[1]}" x2="${b[2]}" y2="${b[3]}"/>`).join('')+B.map((b,i)=>`<g class="badge" data-n="${i+1}"><circle cx="${b[0]}" cy="${b[1]}" r="11"/><text x="${b[0]}" y="${b[1]+4.5}" text-anchor="middle">${i+1}</text></g>`).join('')+'</svg>'}
+
+/* ---------- stained "photo" gel (log scale, like a real gel) ---------- */
+function gelPhoto(lanes,o={}){
+  const hi=o.hi||9000,lo=o.lo||150,lw=o.lw||92,left=o.axis===false?24:92,top=48,H=o.h||250;
+  const W=left+lanes.length*lw+20;
+  const y=bp=>top+14+(Math.log(hi)-Math.log(bp))/(Math.log(hi)-Math.log(lo))*(H-24);
+  const lad=lanes.find(l=>l.lad);
+  let s=`<svg class="photo" viewBox="0 0 ${W} ${top+H+14}" style="max-width:${W}px" role="img" aria-label="${esc(o.aria||'Stained gel')}">
+  <defs><filter id="glow${o.id||''}" x="-20%" y="-200%" width="140%" height="500%"><feGaussianBlur stdDeviation="1.6"/></filter></defs>
+  <rect x="${left-8}" y="${top}" width="${lanes.length*lw+8}" height="${H}" rx="6" fill="#0d1b22"/>`;
+  if(lad&&o.axis!==false) lad.b.forEach(bp=>s+=`<text x="${left-16}" y="${y(bp)+4}" text-anchor="end" class="ax">${bp.toLocaleString()}</text><line x1="${left-12}" x2="${left-4}" y1="${y(bp)}" y2="${y(bp)}" stroke="var(--line-strong)"/>`);
+  if(lad&&o.axis!==false) s+=`<text x="${left-16}" y="${top-12}" text-anchor="end" class="ax">bp</text>`;
+  lanes.forEach((l,i)=>{const cx=left+i*lw+lw/2-4;
+    s+=`<text x="${cx}" y="${top-12}" text-anchor="middle" class="lh">${esc(l.l)}</text><rect x="${cx-26}" y="${top+6}" width="52" height="7" rx="2" fill="#22343c"/>`;
+    l.b.forEach(bp=>{const yy=y(bp);s+=`<rect x="${cx-27}" y="${yy-3.5}" width="54" height="7" rx="3" fill="#bfe9ff" filter="url(#glow${o.id||''})" opacity="${l.lad?.7:.95}"/><rect x="${cx-25}" y="${yy-1.6}" width="50" height="3.2" rx="1.6" fill="#f2fbff"/>`})});
+  return s+'</svg>'}
+
+/* ---------- content ---------- */
+const P1='ATACTGGCCATTCTATCGGCCATTTACTATAC';
+const CS={scene:'TATCTAGGCCGTCACTACTAAGGCCTGGCCTAAAATAAAG',victim:'ACATTATCTGGCCGGCCTAGAGTAAGATGGCCAATATCAA',suspect:'TATCTAGGCCGTCAGTACTAAGGCCTGGCCTAAAATAAAG'};
+const DUP='AACTGGCCGAATCTGGCCGTTTGGCCACTTTCGT';
+const LADDER=[8000,5000,4000,3000,2000,1500,1000,500,200];
+const EST=()=>gelPhoto([{l:'Ladder',b:LADDER,lad:1},{l:'Sample',b:[6000,1500,700]}],{id:'e',aria:'Gel with a DNA ladder and one sample lane with three bands'});
+const CASEGEL=()=>gelPhoto([{l:'Ladder',b:[5000,3000,2000,1500,1000,700,500,300],lad:1},{l:'Scene A',b:[2500,1200,400]},{l:'Scene B',b:[3500,1800,600]},{l:'Victim',b:[2500,1200,400]},{l:'Suspect 1',b:[3500,1800,800]},{l:'Suspect 2',b:[3500,1800,600]}],{id:'c',lw:84,aria:'Case gel with ladder, two crime scene samples, the victim, and two suspects'});
+const FOURLANE=()=>gelPhoto([{l:'1',b:[3000,700]},{l:'2',b:[5000,1200,300]},{l:'3',b:[2000,1500]},{l:'4',b:[4000,900,250]}],{id:'f',axis:false,aria:'Gel with four sample lanes and no ladder'});
+
+const LT=[
+{key:'lt1',title:'Purpose of gel electrophoresis',target:'I can define the purpose of gel electrophoresis.',levels:[
+ [ // Recall
+  {type:'mc',prompt:'What is the purpose of gel electrophoresis?',o:['to cut DNA into pieces at specific sequences','to separate DNA fragments by size so they can be compared','to make millions of copies of DNA','to break open cells and release their DNA'],a:1,e:'Gel electrophoresis sorts a mixture of DNA fragments by size. The pattern of bands can then be compared between samples. Cutting is done by restriction enzymes, and copying is done by PCR.'},
+  {type:'mc',prompt:'After DNA is cut by restriction enzymes, why can’t scientists just compare the samples in their tubes?',o:['The fragments are still mixed together in solution and look the same','The DNA has turned into protein','The fragments have no charge','The enzymes are still cutting'],a:0,e:'Cut-up DNA stays mixed in the liquid, and all the pieces look alike. They must be separated before they can be compared.'},
+  {type:'mc',prompt:'Agarose, the material used to make the gel, comes from:',o:['animal bones','seaweed','petroleum','bacteria'],a:1,e:'Agarose is extracted from seaweed. Mixed with a buffer and heated, it sets into a porous, gelatin-like slab.'},
+  {type:'mc',prompt:'A gel is porous, full of tiny holes. How does that help separate DNA?',o:['It acts like a screen: small pieces slip through easily and travel farther than large pieces','It soaks up the large pieces and keeps them','It gives each fragment a different charge','It heats the DNA so it moves faster'],a:0,e:'The gel works like a sieve. Small fragments move through the holes more easily, so they travel farther in the same amount of time.'},
+  {type:'mc',prompt:'Which DNA fragments travel the farthest from the wells?',o:['the largest fragments','the smallest fragments','all fragments travel the same distance','only fragments from the ladder'],a:1,e:'Smaller fragments move through the gel faster, so they end up farthest from the wells. Fragments of similar size travel about the same distance.'},
+  {type:'mc',prompt:'DNA moves through the gel toward the ________ electrode because DNA has a ________ charge.',o:['negative, positive','negative, negative','positive, positive','positive, negative'],a:3,e:'DNA is negatively charged, and opposites attract, so it moves toward the positive (red) electrode.'},
+  {type:'mc',prompt:'What does the buffer poured over the gel do?',o:['It stains the DNA','It conducts the electric current through the gel','It cuts the DNA','It keeps the DNA from moving'],a:1,e:'The buffer carries the electric current from one electrode to the other, through the gel.'},
+  {type:'mc',prompt:'Why do scientists run a DNA ladder alongside their samples?',o:['To make the samples move faster','It contains fragments of known sizes, so the size of unknown fragments can be estimated','To add color to the gel','To cut the DNA in the other lanes'],a:1,e:'The ladder is a standard for comparison. Its bands are known sizes, measured in base pairs (bp).'},
+  {type:'mc',prompt:'RFLP stands for restriction fragment length polymorphism. What are RFLPs?',o:['Differences in the pattern of DNA fragments caused by differences in DNA sequence','Enzymes that copy DNA','The wells at the top of a gel','The dye that tracks DNA'],a:0,e:'Different sequences give different restriction sites, so people’s DNA is cut into different-sized pieces. Those differences in the banding pattern are RFLPs, the basis of a DNA fingerprint.'},
+  {type:'mc',prompt:'After the gel runs, the DNA fragments are invisible. What must scientists do to see them?',o:['Heat the gel','Stain the gel with a dye that binds to DNA','Add more buffer','Reverse the electrodes'],a:1,e:'A DNA stain binds to the fragments so the bands become visible, often on a light box.'}
+ ],
+ [ // Apply
+  {type:'explore',prompt:'Gel explorer. Drag the run-time slider to run the gel. Try switching the leads, and try running it too long.'},
+  {type:'label',prompt:'Label the gel. Choose the name of each numbered part. Focus a menu to highlight its number on the diagram.',fig:gelLab,parts:GEL_PARTS},
+  {type:'table',prompt:'Match each term to its description.',cols:[{h:'Term',o:['Well','Lane','Agarose gel','Buffer','DNA ladder','Base pair (bp)','DNA profile']}],
+   rows:[{l:'Small indentation at one end of the gel where a sample is loaded',a:['Well']},{l:'The path a sample travels straight down from its well',a:['Lane']},{l:'Porous material that filters DNA fragments by size',a:['Agarose gel']},{l:'Liquid that covers the gel and conducts electricity',a:['Buffer']},{l:'Set of DNA fragments of known sizes',a:['DNA ladder']},{l:'Unit used to measure the length of a DNA fragment',a:['Base pair (bp)']},{l:'The banding pattern of DNA pieces that is unique to a person',a:['DNA profile']}]},
+  {type:'mc',prompt:'True or false: if you load the DNA into wells next to the positive electrode, or switch the leads on the power supply, the DNA will run off the short end of the gel.',o:['True','False'],keep:1,a:0,e:'DNA always moves toward the positive pole. If the wells are next to it, the DNA leaves the wells and runs out of the gel into the buffer.'},
+  {type:'mc',prompt:'Two fragments are in the same lane: one is 400 bp and one is 2,000 bp. Where will the 2,000 bp fragment be?',o:['Closer to the wells than the 400 bp fragment','Farther from the wells than the 400 bp fragment','At the same place as the 400 bp fragment','It will not move at all'],a:0,e:'Larger fragments move more slowly through the gel, so the 2,000 bp fragment stays closer to the wells.'},
+  {type:'short',prompt:'In your own words, what is the purpose of gel electrophoresis? Explain how the gel and the electric current separate the DNA.',model:'Gel electrophoresis separates a mixture of DNA fragments by size so different samples can be compared. DNA is loaded into wells near the negative electrode. When the current is on, the negatively charged DNA is pulled toward the positive electrode. The gel acts like a screen, so small fragments move farther than large ones. After staining, the bands form a pattern that can be compared with a ladder and with other samples.',pts:['Separates DNA fragments by size','DNA is negative and moves toward the positive electrode','Smaller fragments travel farther through the porous gel','The banding pattern is used to compare samples']}
+ ],
+ [ // Analyze
+  {type:'mc',prompt:'Every DNA fragment has a negative charge and is pulled toward the positive end. Why do the fragments end up in different places?',o:['Larger fragments have more charge, so they move faster','The gel slows larger fragments more than smaller ones, so in the same amount of time smaller ones travel farther','Each fragment is attracted to a different electrode','Fragments stop when they hit a fragment of the same size'],a:1,e:'All fragments are pulled the same direction. The difference is how easily they fit through the gel’s pores: small fragments slip through, large ones get held back.'},
+  {type:'mc',prompt:'Look at this gel. Which lane contains the smallest fragment?',fig:FOURLANE,o:['Lane 1','Lane 2','Lane 3','Lane 4'],keep:1,a:3,e:'The smallest fragment is the band farthest from the wells. Lane 4’s lowest band (about 250 bp) is lower than Lane 2’s (about 300 bp).'},
+  {type:'mc',prompt:'In the same gel, which lane contains the largest fragment?',fig:FOURLANE,o:['Lane 1','Lane 2','Lane 3','Lane 4'],keep:1,a:1,e:'The largest fragment is the band closest to the wells. Lane 2’s top band (about 5,000 bp) has moved the least.'},
+  {type:'mc',prompt:'Loading dye moves ahead of the DNA. Why do scientists turn off the power when the dye gets close to the bottom of the gel?',o:['The dye will start cutting the DNA','The dye shows where the smallest DNA is; if it runs farther, the smallest fragments could run off the gel and be lost','The gel will melt','The ladder stops working once the dye reaches the bottom'],a:1,e:'DNA is invisible while the gel runs, so the dye is the only way to track progress. Once the dye nears the edge, the smallest fragments are not far behind.'},
+  {type:'mc',prompt:'You run a gel and the ladder lane is empty, but every sample lane shows bands. What should you do?',o:['Analyze the samples anyway; the ladder isn’t needed','Rerun all the samples and the ladder together on a new gel','Run just the ladder on a new gel and compare it to this one'],a:1,e:'No two gels run exactly the same (time, voltage, gel thickness). Fragment sizes can only be estimated from a ladder that ran on the same gel, at the same time, as the samples.'},
+  {type:'short',prompt:'A detective says, “Restriction enzymes already cut the DNA. Why do we need a gel at all?” Write a response that explains why the cut DNA must be separated and how that leads to a DNA profile.',model:'After the enzymes cut the DNA, all the pieces are mixed in one tube and look the same, so you cannot tell one person’s pattern from another’s. Gel electrophoresis separates the pieces by size. Because people have different sequences, their DNA is cut into different numbers and sizes of fragments. After staining, those differences show up as a banding pattern (RFLPs), which is the DNA profile we compare.',pts:['Cut fragments are mixed together and cannot be told apart','The gel separates fragments by size','Different sequences produce different fragment sizes (RFLPs)','The banding pattern is the DNA profile that gets compared']}
+ ]
+]},
+{key:'lt2',title:'Lab techniques and results',target:'I can explain and demonstrate techniques in molecular biology (DNA extraction, restriction digestion, gel electrophoresis) and interpret results.',levels:[
+ [ // Recall
+  {type:'mc',prompt:'Restriction enzymes (also called restriction endonucleases) do what job?',o:['They build new DNA in a PCR machine','They display DNA fragments on a gel','They cut DNA at very specific sequences','They mark where DNA replication should start'],a:2,e:'Each restriction enzyme recognizes one short sequence and cuts the DNA there, like molecular scissors.'},
+  {type:'mc',prompt:'How many microliters (µL) are in 1 milliliter (mL)?',o:['10','100','1,000','1,000,000'],keep:1,a:2,e:'1 mL = 1,000 µL. Multiply mL by 1,000 to get µL; divide µL by 1,000 to get mL.'},
+  {type:'mc',prompt:'Accuracy describes:',o:['how close a measurement is to the true value','how many times you repeat a measurement','how close repeated measurements are to each other','how fast you can pipette'],a:0,e:'Accuracy is closeness to the true value. Precision is how reproducible your measurements are.'},
+  {type:'mc',prompt:'Loading dye is a mix of a dye and a sugar (glycerol). What does the sugar do?',o:['It makes the DNA visible after the run','It feeds the restriction enzymes','It is heavy, so it sinks the DNA to the bottom of the well and keeps it from floating away','It conducts electricity'],a:2,e:'The sugar makes the sample denser than the buffer. The blue dye lets you track how far the run has gone.'},
+  {type:'mc',prompt:'When loading a sample into a well, you should press the plunger to:',o:['the first stop only, and keep it pressed until the tip is out of the well','the second stop, to push out every drop','the first stop, then release it while the tip is still in the well','no stop; just tap the pipette'],a:0,e:'Going to the second stop blows air into the well and can push the DNA out. Releasing the plunger too early sucks the sample back into the tip.'},
+  {type:'mc',prompt:'When setting up the gel box, the wells should be:',o:['closest to the positive (red) electrode','closest to the negative (black) electrode','in the center of the gel','it doesn’t matter'],a:1,e:'Wells go at the negative end so the DNA can travel the full length of the gel toward the positive end. “Run to red.”'},
+  {type:'mc',prompt:'Before DNA can be cut and run on a gel, it must be extracted. Where is DNA collected from in blood evidence?',o:['red blood cells','white blood cells','plasma','platelets'],a:1,e:'Mature red blood cells have no nucleus. The DNA comes from the nucleus of white blood cells.'},
+  {type:'mc',prompt:'CODIS is the United States’ national DNA database. Who manages it?',o:['each local police department','the FBI','hospitals','the Centers for Disease Control'],a:1,e:'The FBI manages CODIS. It holds profiles of convicted offenders, crime-scene samples, unidentified remains, and missing persons and their relatives.'}
+ ],
+ [ // Apply
+  {type:'num',prompt:'Convert 75 µL into mL.',a:0.075,unit:'mL',e:'Divide µL by 1,000: 75 ÷ 1,000 = 0.075 mL.'},
+  {type:'num',prompt:'Convert 0.4 mL into µL.',a:400,unit:'µL',e:'Multiply mL by 1,000: 0.4 × 1,000 = 400 µL.'},
+  {type:'num',prompt:'Convert 2,500 µL into mL.',a:2.5,unit:'mL',e:'2,500 ÷ 1,000 = 2.5 mL.'},
+  {type:'mc',prompt:'You set your micropipette to 50 µL. You draw up liquid five times, and each time you actually expel 46 µL. Are you accurate, precise, or both?',o:['Accurate but not precise','Precise but not accurate','Both accurate and precise','Neither'],a:1,e:'You got the same amount every time (precise), but it was not the 50 µL you wanted (not accurate).'},
+  {type:'table',prompt:'Four students each dispense 200 µL of water four times. 200 µL of water should weigh about 0.20 g. Decide whether each student is accurate and whether each is precise.',cols:[{h:'Accurate?',o:['Yes','No']},{h:'Precise?',o:['Yes','No']}],
+   rows:[{l:'Student A: <span class="mono">0.20, 0.20, 0.21, 0.20 g</span>',a:['Yes','Yes']},{l:'Student B: <span class="mono">0.17, 0.17, 0.17, 0.17 g</span>',a:['No','Yes']},{l:'Student C: <span class="mono">0.25, 0.15, 0.24, 0.16 g</span>',a:['Yes','No']},{l:'Student D: <span class="mono">0.28, 0.22, 0.31, 0.25 g</span>',a:['No','No']}],
+   explain:'Accuracy is judged by the average: A averages 0.20 g, B 0.17 g, C 0.20 g, and D about 0.27 g. Precision is judged by how close the trials are to each other: A and B barely change; C and D jump around.'},
+  {type:'table',prompt:'Match each tool to the job it does in DNA analysis.',cols:[{h:'Tool',o:['Micropipette','Restriction enzyme','Agarose gel','Buffer','Loading dye','DNA ladder','DNA stain','Power supply']}],
+   rows:[{l:'Moves exact, tiny volumes of liquid (µL)',a:['Micropipette']},{l:'Cuts DNA at a specific sequence',a:['Restriction enzyme']},{l:'Acts like a screen that separates fragments by size',a:['Agarose gel']},{l:'Covers the gel and carries the electric current',a:['Buffer']},{l:'Weighs down the sample and lets you track the run',a:['Loading dye']},{l:'Fragments of known size used to estimate unknown sizes',a:['DNA ladder']},{l:'Binds to DNA so bands can be seen',a:['DNA stain']},{l:'Creates the electric charge across the gel',a:['Power supply']}]},
+  {type:'order',prompt:'Put the steps of a DNA analysis in order, from crime scene to conclusion.',items:['Collect cells (blood at the scene, cheek swabs from persons of interest)','Extract the DNA from the cells','Cut the DNA with restriction enzymes (restriction digestion)','Mix samples with loading dye and load them into the wells, with a DNA ladder','Run the gel until the dye nears the bottom','Stain the gel to see the DNA bands','Compare the banding patterns to draw a conclusion'],seed:[2,5,0,3,6,1,4]},
+  {type:'order',prompt:'Put the steps for making and running a gel in order.',items:['Add agarose powder to the diluted buffer','Heat to dissolve the agarose, then swirl to cool','Add the end caps and comb, then pour the agarose into the casting tray','Once solid, remove the end caps and the comb','Place the gel in the chamber and cover it with buffer','Load the samples into the wells','Put on the safety cover, attach the leads, and run the gel','Stain and observe the gel'],seed:[3,0,6,2,7,1,5,4]},
+  {type:'short',prompt:'You weigh ten 200 µL trials of water. Explain how you would use your data to decide whether your pipetting is accurate and whether it is precise. Then give one way to improve.',model:'200 µL of water should weigh about 0.2 g. To check accuracy, I would average my ten weights and see how close the average is to 0.2 g. To check precision, I would see how close the ten weights are to each other; if they are all about the same, I am precise. To improve, I could hold the pipette straight up, press to the first stop to draw up liquid, release the plunger slowly, and check the tip for air bubbles.',pts:['Compares results to the true value (about 0.2 g)','Accuracy: the average is close to 0.2 g','Precision: the trials are close to each other','Gives a specific way to improve technique']}
+ ],
+ [ // Analyze
+  {type:'table',prompt:'Practice case: someone broke into a home and the owner (the victim) was hurt. Blood was found on the doorknob (Scene A) and on a broken window (Scene B). Use the gel to decide whose DNA is in each scene sample.',fig:CASEGEL,cols:[{h:'Whose DNA?',o:['Victim','Suspect 1','Suspect 2','No match']}],
+   rows:[{l:'Scene A (doorknob)',a:['Victim']},{l:'Scene B (window)',a:['Suspect 2']}],explain:'Scene A’s bands (2,500, 1,200, and 400 bp) line up exactly with the victim’s. Scene B’s bands (3,500, 1,800, and 600 bp) line up exactly with Suspect 2’s.'},
+  {type:'mc',prompt:'Suspect 1’s top two bands line up with Scene B, but the bottom band does not. What should you conclude?',fig:CASEGEL,o:['Suspect 1 is a partial match, so he is probably guilty','Suspect 1 does not match; every band must line up for a match','The gel ran incorrectly in Suspect 1’s lane','Suspect 1 and Suspect 2 are the same person'],a:1,e:'A DNA profile is the whole pattern. One band in a different place means a different sequence, so Suspect 1 is excluded as the source of Scene B.'},
+  {type:'table',prompt:'Troubleshooting: match each problem with its most likely cause.',cols:[{h:'Most likely cause',o:['The leads were reversed','The gel ran too long','The gel was not stained','Air was pushed into the well (second stop)']}],
+   rows:[{l:'The dye moved up, away from the wells, and out of the gel',a:['The leads were reversed']},{l:'The blue dye is gone and the smallest bands are missing from every lane',a:['The gel ran too long']},{l:'The dye ran normally, but no bands appear in any lane, not even the ladder',a:['The gel was not stained']},{l:'Right after loading, a sample bubbled up and floated out of its well',a:['Air was pushed into the well (second stop)']}]},
+  {type:'mc',prompt:'A student’s micropipetting was precise but not accurate, so every sample got too little DNA. What is the most likely effect on the gel?',o:['The bands will be in the wrong places','The bands will be faint, but in the correct positions','The DNA will move toward the negative electrode','The ladder will run off the gel'],a:1,e:'Band position depends on fragment size, not amount. Less DNA makes fainter bands that are harder to see and interpret.'},
+  {type:'short',prompt:'DNA evidence analysis is an imperfect science. Give two reasons why, and explain how each could lead to a wrong conclusion.',model:'First, samples can be contaminated with DNA from investigators or other people, which could point to the wrong person. Second, lab errors such as poor pipetting, a gel that runs too long, or a missing ladder can produce wrong or unreadable bands. Also, DNA only shows that someone’s cells were there, not how or when they got there, so an innocent person could be linked to a scene.',pts:['Gives a first reason (for example, contamination)','Gives a second reason (for example, human or lab error, degraded samples, or transferred DNA)','Explains how the first could cause a wrong conclusion','Explains how the second could cause a wrong conclusion']},
+  {type:'short',prompt:'Ethics: right now there is no national database holding every person’s DNA profile. Give one reason to support creating one and one reason against it.',model:'For: a database of everyone could quickly identify suspects, missing persons, and unidentified remains, and could clear innocent people. Against: it raises privacy concerns, because DNA reveals personal information (health, family relationships) that could be misused, hacked, or used without consent.',pts:['Gives a reason to support a national database','Gives a reason against a national database','Explains each reason with a consequence']}
+ ]
+]},
+{key:'lt3',title:'Cut, count, and plot',target:'I can, given a DNA fragment and restriction enzyme, “cut” in the correct loci, count the number of base pairs in the fragment, and plot the fragments on a paper gel to interpret results.',levels:[
+ [ // Recall
+  {type:'mc',prompt:'The enzyme HaeIII recognizes the sequence GGCC. Where does it cut?',o:['GG │ CC, between the two G’s and the two C’s','G │ GCC, after the first G','before the GGCC sequence','after the GGCC sequence'],a:0,e:'HaeIII cuts straight through the middle of its site: GG │ CC. Because the cut goes straight across both strands, it leaves blunt ends.'},
+  {type:'mc',prompt:'A straight piece of DNA is cut in 3 places. How many fragments are made?',o:['2','3','4','6'],keep:1,a:2,e:'For a straight (linear) piece of DNA, fragments = cuts + 1. Three cuts make 4 fragments.'},
+  {type:'mc',prompt:'How do you find the size of a fragment in base pairs (bp)?',o:['Count every letter on both strands','Count the bases on one strand of the fragment; each one is paired with a partner','Count only the G’s and C’s','Multiply the number of fragments by 2'],a:1,e:'Each base on the top strand is paired with one on the bottom strand, so counting one strand gives the number of base pairs.'},
+  {type:'mc',prompt:'On a gel, where will the largest fragment be?',o:['closest to the wells','farthest from the wells','in the middle','in the ladder lane'],a:0,e:'Large fragments move the shortest distance, so they stay closest to the wells.'},
+  {type:'mc',prompt:'A restriction enzyme’s recognition site in a person’s DNA is changed by one base. What happens at that spot?',o:['The enzyme cuts there anyway','The enzyme does not cut there, because the site must match exactly','The enzyme cuts twice','The DNA cannot move in a gel'],a:1,e:'Enzymes only cut their exact sequence. A one-base change removes the cut, so two fragments become one larger fragment.'},
+  {type:'mc',prompt:'Two fragments in the same sample are both 10 bp long. How will they look on the gel?',o:['As two separate bands','As one band, because they travel the same distance','They will not show up','As a smear down the whole lane'],a:1,e:'Fragments of the same size travel the same distance, so they land in the same place and appear as a single (often brighter) band.'}
+ ],
+ [ // Apply
+  {type:'ref'},
+  {type:'digest',prompt:'Cut this DNA with HaeIII. Click between two base pairs to place a cut; click again to remove it. Then check your cuts.',seq:P1,enz:'HaeIII',ds:1},
+  {type:'num',prompt:'How many fragments did HaeIII make from the DNA above?',a:3,unit:'fragments',e:'HaeIII found GGCC twice. Two cuts make 3 fragments.'},
+  {type:'table',prompt:'Count the base pairs in each fragment from your digest, from left to right.',cols:[{h:'Size (bp)',o:['5','7','9','12','13','15']}],
+   rows:[{l:'Fragment 1',a:['7']},{l:'Fragment 2',a:['12']},{l:'Fragment 3',a:['13']}],explain:'The cuts fall after base pair 7 and after base pair 19. The 32 bp piece splits into 7 + 12 + 13 = 32 bp. Always check that your fragments add up to the total length.'},
+  {type:'plot',prompt:'Plot your three fragments on the paper gel. Click in the lane at the right size to draw a band; click again to remove it. Use the ladder to find each size.',lanes:[{l:'Sample',seq:P1,enz:'HaeIII'}],max:25},
+  {type:'digest',prompt:'Practice with a different enzyme: cut this DNA with EcoRI (G^AATTC). Only the top strand is shown.',seq:'TTGAATTCAGCATGGAATTCTA',enz:'EcoRI'},
+  {type:'num',prompt:'Real gels measure much larger fragments. Use the ladder to estimate the size of the top band in the sample lane.',fig:EST,a:6000,lo:5500,hi:7500,atext:'about 6,000',unit:'bp',e:'The band sits between the 8,000 and 5,000 bp ladder bands, a little closer to 5,000. Any estimate from about 5,500 to 7,500 bp is reasonable.'},
+  {type:'num',prompt:'Estimate the size of the middle band in the sample lane.',fig:EST,a:1500,lo:1400,hi:1600,atext:'1,500',unit:'bp',e:'The middle band lines up exactly with the 1,500 bp ladder band.'},
+  {type:'num',prompt:'Estimate the size of the bottom band in the sample lane.',fig:EST,a:700,lo:550,hi:900,atext:'about 700',unit:'bp',e:'The band is between the 1,000 and 500 bp ladder bands. Any estimate from about 550 to 900 bp is reasonable.'}
+ ],
+ [ // Analyze
+  {type:'digest',prompt:'Case file: blood was found at a scene. <b>Blood at the scene:</b> cut with HaeIII.',seq:CS.scene,enz:'HaeIII',ds:1},
+  {type:'digest',prompt:'<b>Victim:</b> cut with HaeIII. Look closely; two sites can sit right next to each other.',seq:CS.victim,enz:'HaeIII',ds:1},
+  {type:'digest',prompt:'<b>Suspect:</b> cut with HaeIII.',seq:CS.suspect,enz:'HaeIII',ds:1},
+  {type:'table',prompt:'Record your results for each sample. Fragment sizes are listed from left to right.',cols:[{h:'Number of fragments',o:['2','3','4','5']},{h:'Sizes of fragments (bp)',o:['8, 15, 5, 12','8, 20, 12','11, 4, 15, 10','11, 19, 10','7, 16, 5, 12']}],
+   rows:[{l:'Blood at the scene',a:['4','8, 15, 5, 12']},{l:'Victim',a:['4','11, 4, 15, 10']},{l:'Suspect',a:['4','8, 15, 5, 12']}],explain:'Scene: cuts after bp 8, 23, and 28. Victim: cuts after bp 11, 15, and 30 (GGCCGGCC holds two sites, making a 4 bp fragment). Suspect: same cut sites as the scene.'},
+  {type:'plot',prompt:'Plot the fragments from all three samples on the paper gel.',lanes:[{l:'Scene',seq:CS.scene,enz:'HaeIII'},{l:'Victim',seq:CS.victim,enz:'HaeIII'},{l:'Suspect',seq:CS.suspect,enz:'HaeIII'}],max:25},
+  {type:'mc',prompt:'Who does the blood at the scene belong to?',o:['The victim','The suspect','Both the victim and the suspect','Neither'],a:1,e:'The scene and the suspect both have bands at 15, 12, 8, and 5 bp. The victim shares only the 15 bp band, so the victim is not the source.'},
+  {type:'short',prompt:'Explain your reasoning: who does the blood belong to, and how does the gel show it? Use the words band, fragment, and base pairs.',model:'The blood belongs to the suspect. When HaeIII cut the DNA, the scene sample and the suspect both made four fragments of 15, 12, 8, and 5 base pairs, so every band in the scene lane lines up with a band in the suspect lane. The victim’s fragments were 15, 11, 10, and 4 base pairs, and only one band lines up, so the victim’s pattern does not match.',pts:['Names the suspect','Scene and suspect have the same fragment sizes (15, 12, 8, 5 bp)','Every band in the scene lane lines up with the suspect lane','The victim’s pattern is different (only one band matches)']},
+  {type:'mc',prompt:'Look again at the scene and suspect sequences. One base is different (C in the scene, G in the suspect, at position 15). Why didn’t that change the bands?',o:['HaeIII cut there anyway','The change is not inside a GGCC site, so the cuts and fragment sizes stay the same','The gel cannot detect DNA','The change made the fragment one base longer'],a:1,e:'Only changes that create or destroy a recognition site change the pattern. That is why real DNA profiles compare many sites with several enzymes before calling it a match.'},
+  {type:'digest',prompt:'One more: cut this DNA with HaeIII.',seq:DUP,enz:'HaeIII',ds:1},
+  {type:'num',prompt:'Your last digest made 4 fragments. How many bands would you see in this lane on a gel?',a:3,unit:'bands',e:'The fragments are 6, 10, 8, and 10 bp. The two 10 bp fragments travel the same distance and form a single band, so you see 3 bands: 10, 8, and 6 bp.'}
+ ]
+]}
+];
+
+
+/* ---------- fixed shuffle of answer choices (same order every visit) ---------- */
+function rng(str){let h=2166136261;for(const c of str){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return()=>{h^=h<<13;h^=h>>>17;h^=h<<5;return (h>>>0)/4294967296}}
+function shuf(a,r){const b=a.slice();for(let i=b.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b}
+const ORDERED=o=>o.every(x=>/^[\d,.]+$/.test(x))||o.join()==='Yes,No'||o.join()==='Yes,No,—';
+LT.forEach(lt=>lt.levels.forEach((qs,vi)=>qs.forEach((q,qi)=>{const id=`${lt.key}-${vi}-${qi}`;
+  if(q.type==='mc'&&!q.keep){const r=rng(id);const right=q.o[q.a];q.o=shuf(q.o,r);q.a=q.o.indexOf(right)}
+  if(q.type==='table')q.cols.forEach((c,ci)=>{if(ORDERED(c.o))return;const r=rng(id+'c'+ci);
+    let o=shuf(c.o,r),t=0;const first=q.rows.map(row=>row.a[ci]);
+    while(t++<20&&o.filter((x,i)=>x===first[i]).length>1)o=shuf(c.o,r);c.o=o});
+})));
+const LVN=['Recall','Apply','Analyze'];
+LT.forEach((lt,li)=>lt.levels.forEach((qs,vi)=>{let n=0;qs.forEach((q,qi)=>{q.id=`${lt.key}-${vi}-${qi}`;q.lt=li;q.lv=vi;if(!['explore','ref'].includes(q.type)){n++;q.n=n}})}));
+
+/* ---------- scoring ---------- */
+function maxOf(q){if(q.type==='plot')return q.lanes.length;if(q.type==='table')return q.rows.reduce((s,r)=>s+r.a.length,0);if(q.type==='label')return q.parts.length;if(q.type==='digest')return cutsOf(q.seq,q.enz).length;return 1}
+function lvScore(li,vi){let s=0,m=0,done=0,tot=0;LT[li].levels[vi].forEach(q=>{if(q.n==null)return;tot++;m+=maxOf(q);const r=S.r[q.id];if(r){done++;s+=r.score}});return {s,m,done,tot}}
+function ltScore(li){let s=0,m=0;[0,1,2].forEach(v=>{const x=lvScore(li,v);s+=x.s;m+=x.m});return {s,m}}
+
+/* ---------- nav ---------- */
+function renderNav(){
+  const nav=document.getElementById('ltnav');
+  const all=LT.reduce((a,_,i)=>{const x=ltScore(i);return [a[0]+x.s,a[1]+x.m]},[0,0]);
+  nav.innerHTML=LT.map((lt,i)=>{const x=ltScore(i);return `<button role="tab" aria-selected="${S.view===lt.key}" data-v="${lt.key}"><span class="ltk">LT${i+1}</span><span class="ltn">${lt.title}</span><span class="meter"><i style="width:${(x.s/x.m*100).toFixed(0)}%"></i></span></button>`}).join('')+
+   `<button role="tab" aria-selected="${S.view==='results'}" data-v="results"><span class="ltk">REPORT</span><span class="ltn">My results</span><span class="meter"><i style="width:${(all[0]/all[1]*100).toFixed(0)}%"></i></span></button>`;
+  nav.querySelectorAll('button').forEach(b=>b.onclick=()=>{S.view=b.dataset.v;save();render();try{history.replaceState(null,'','#'+S.view)}catch(e){}});
+}
+function render(){renderNav();const m=document.getElementById('main');m.innerHTML='';if(S.view==='results')return renderResults(m);
+  let L=LT.findIndex(l=>l.key===S.view);if(L<0)L=0;const lt=LT[L];const vi=S.lvl[lt.key]||0;
+  m.insertAdjacentHTML('beforeend',`<div class="lthead"><div class="eyebrow">Learning target ${L+1}</div><h2>${lt.title}</h2><p>${lt.target}</p></div>`);
+  const lv=document.createElement('div');lv.className='lv';lv.setAttribute('role','tablist');
+  lv.innerHTML=LVN.map((n,i)=>{const x=lvScore(L,i);return `<button role="tab" aria-selected="${i===vi}" data-i="${i}">Level ${i+1} · ${n}<small>${x.done}/${x.tot}</small></button>`}).join('');
+  lv.querySelectorAll('button').forEach(b=>b.onclick=()=>{S.lvl[lt.key]=+b.dataset.i;save();render()});
+  m.appendChild(lv);
+  const qs=document.createElement('div');qs.className='qs';m.appendChild(qs);
+  lt.levels[vi].forEach(q=>qs.appendChild(card(q)));
+  if(vi<2){const nx=document.createElement('div');nx.className='row';nx.innerHTML=`<button class="btn ghost">Go to Level ${vi+2} · ${LVN[vi+1]}</button>`;nx.firstChild.onclick=()=>{S.lvl[lt.key]=vi+1;save();render();window.scrollTo(0,0)};m.appendChild(nx)}
+  else if(L<LT.length-1){const nx=document.createElement('div');nx.className='row';nx.innerHTML=`<button class="btn ghost">Go to LT${L+2} · ${LT[L+1].title}</button>`;nx.firstChild.onclick=()=>{S.view=LT[L+1].key;save();render();window.scrollTo(0,0)};m.appendChild(nx)}
+}
+function refreshHead(){renderNav();let li=LT.findIndex(l=>l.key===S.view);if(li<0)return;document.querySelectorAll('.lv button').forEach(b=>{const x=lvScore(li,+b.dataset.i);b.querySelector('small').textContent=`${x.done}/${x.tot}`})}
+
+/* ---------- cards ---------- */
+const TL={mc:'Multiple choice',short:'Short answer',num:'Calculate',order:'Sequence',table:'Match',label:'Diagram',comp:'Base pairing',digest:'Restriction digest',explore:'Explore',plot:'Paper gel'};
+const figOf=q=>typeof q.fig==='function'?q.fig():q.fig;
+function card(q){const el=document.createElement('article');el.className='q';el.id='q-'+q.id;fill(el,q);return el}
+function head(q,skipFig){const r=S.r[q.id];const m=maxOf(q);let st='';if(r){st=r.score===m?`<span class="qstat ok">Correct${m>1?` ${r.score}/${m}`:''}</span>`:`<span class="qstat no">${m>1?`${r.score}/${m}`:(q.type==='short'?'Review again':'Not yet')}</span>`}
+  return `<div class="qhead">${q.n?`<span class="qnum">Q${q.n}</span>`:''}<span class="qtype">${TL[q.type]||''}</span>${st}</div><p class="prompt">${q.prompt}</p>${q.fig&&!skipFig?`<div class="fig">${figOf(q)}</div>`:''}`}
+function done(el,q){const r=S.r[q.id];el.classList.toggle('ok',!!r&&r.score===maxOf(q));el.classList.toggle('no',!!r&&r.score<maxOf(q));save();refreshHead()}
+const retryBtn=()=>`<button class="btn ghost" data-retry>Try again</button>`;
+function wireRetry(el,q){const b=el.querySelector('[data-retry]');if(b)b.onclick=()=>{delete S.r[q.id];if(q.type==='short')delete S.rev[q.id];fill(el,q);done(el,q)}}
+
+function fill(el,q){
+  const r=S.r[q.id];
+  if(q.type==='ref'){el.className='ref';el.innerHTML=REF;return}
+  if(q.type==='explore'){el.innerHTML=head(q)+GEL_EX;wireGel(el);return}
+  let b='';
+  if(q.type==='mc'){
+    b=`<div class="opts">${q.o.map((o,i)=>{let c='';if(r){if(i===q.a)c='right';else if(i===r.v)c='wrong'}return `<button class="opt ${c}" data-i="${i}" ${r?'disabled':''}><span class="k">${'ABCD'[i]}</span><span>${o}</span></button>`}).join('')}</div>`;
+    if(r) b+=`<div class="fb"><b>${r.score?'Correct.':'Not quite.'}</b> ${q.e}</div><div class="row">${retryBtn()}</div>`;
+  }
+  if(q.type==='num'){
+    b=`<div class="row" style="margin-top:0"><input type="number" step="any" aria-label="Your answer" id="in-${q.id}" value="${r?r.v:esc(S.d[q.id]||'')}" ${r?'disabled':''} class="${r?(r.score?'right':'wrong'):''}" style="width:140px"> <span>${q.unit}</span>${r?'':`<button class="btn" data-check>Check</button>`}</div>`;
+    if(r) b+=`<div class="fb"><b>${r.score?(q.lo!=null?'Good estimate.':'Correct.'):`Not quite. The answer is ${q.atext||q.a.toLocaleString()} ${q.unit}.`}</b> ${q.e}</div><div class="row">${retryBtn()}</div>`;
+  }
+  if(q.type==='short'){
+    const rev=S.rev[q.id];
+    b=`<textarea id="ta-${q.id}" aria-label="Your answer" placeholder="Type your answer here, then compare it with the model answer.">${esc(S.d[q.id]||'')}</textarea>`;
+    if(!rev) b+=`<div class="row"><button class="btn" data-reveal>Compare with model answer</button></div>`;
+    else{b+=`<div class="model"><h4>Model answer</h4><p style="margin:0">${q.model}</p><h4 style="margin-top:12px">Did your answer include…</h4><ul class="checks">${q.pts.map((p,i)=>`<li><label><input type="checkbox" ${(S.t[q.id]||[])[i]?'checked':''}> ${p}</label></li>`).join('')}</ul>
+      ${r?`<div class="row">${retryBtn()}</div>`:`<div class="row"><button class="btn" data-self="1">I got it</button><button class="btn ghost" data-self="0">I need to review this</button></div>`}</div>`}
+  }
+  if(q.type==='order'){
+    if(!S.o[q.id]) S.o[q.id]=q.seed.slice();
+    const ord=S.o[q.id];
+    b=`<ol class="order">${ord.map((it,p)=>{let c='';if(r)c=it===p?'right':'wrong';return `<li class="${c}"><span class="pos">${p+1}</span><span class="t">${q.items[it]}${r&&it!==p?`<span class="fix">Belongs in position ${it+1}</span>`:''}</span>${r?'':`<button class="mv" data-up="${p}" aria-label="Move up" ${p===0?'disabled':''}>↑</button><button class="mv" data-dn="${p}" aria-label="Move down" ${p===ord.length-1?'disabled':''}>↓</button>`}</li>`}).join('')}</ol>`;
+    b+=`<div class="row">${r?retryBtn():`<button class="btn" data-check>Check order</button>`}</div>`;
+  }
+  if(q.type==='table'){
+    const v=S.t[q.id]||[];
+    b=`<div class="tbl"><table><thead><tr><th></th>${q.cols.map(c=>`<th>${c.h}</th>`).join('')}</tr></thead><tbody>${q.rows.map((row,ri)=>`<tr><td>${row.l}</td>${q.cols.map((c,ci)=>{const val=(v[ri]||[])[ci]||'';let cls='';if(r)cls=val===row.a[ci]?'right':'wrong';
+      return `<td><select aria-label="${esc(row.l)}: ${esc(c.h)}" data-r="${ri}" data-c="${ci}" class="${cls}" ${r?'disabled':''}><option value="">Choose…</option>${c.o.map(o=>`<option ${o===val?'selected':''}>${o}</option>`).join('')}</select>${r&&val!==row.a[ci]?`<span class="fix">${row.a[ci]}</span>`:''}</td>`}).join('')}</tr>`).join('')}</tbody></table></div>`;
+    if(r&&q.explain) b+=`<div class="fb">${q.explain}</div>`;
+    b+=`<div class="row">${r?retryBtn():`<button class="btn" data-check>Check</button>`}</div>`;
+  }
+  if(q.type==='label') b=labelBody(q,r);
+  if(q.type==='comp') b=compBody(q,r);
+  if(q.type==='digest') b=digestBody(q,r);
+  if(q.type==='plot') b=plotBody(q,r);
+  el.innerHTML=head(q,q.type==='label')+b;
+  wire(el,q);done(el,q);
+}
+
+function wire(el,q){
+  wireRetry(el,q);
+  if(q.type==='mc') el.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{const i=+o.dataset.i;S.r[q.id]={score:i===q.a?1:0,v:i};fill(el,q)});
+  if(q.type==='num'){const inp=el.querySelector('input');inp.oninput=()=>{S.d[q.id]=inp.value;save()};const c=el.querySelector('[data-check]');
+    const go=()=>{if(inp.value==='')return inp.focus();const v=parseFloat(inp.value);S.r[q.id]={score:(q.lo!=null?(v>=q.lo&&v<=q.hi):Math.abs(v-q.a)<=Math.abs(q.a)*1e-3+1e-9)?1:0,v};fill(el,q)};
+    if(c){c.onclick=go;inp.onkeydown=e=>{if(e.key==='Enter')go()}}}
+  if(q.type==='short'){const ta=el.querySelector('textarea');ta.oninput=()=>{S.d[q.id]=ta.value;save()};
+    const rv=el.querySelector('[data-reveal]');if(rv)rv.onclick=()=>{S.rev[q.id]=1;fill(el,q)};
+    el.querySelectorAll('.checks input').forEach((c,i)=>c.onchange=()=>{const a=S.t[q.id]||[];a[i]=c.checked;S.t[q.id]=a;save()});
+    el.querySelectorAll('[data-self]').forEach(b=>b.onclick=()=>{S.r[q.id]={score:+b.dataset.self};fill(el,q)})}
+  if(q.type==='order'){const o=S.o[q.id];
+    el.querySelectorAll('[data-up]').forEach(b=>b.onclick=()=>{const p=+b.dataset.up;[o[p-1],o[p]]=[o[p],o[p-1]];save();fill(el,q);el.querySelector(`[data-up="${p-1}"]`)?.focus()});
+    el.querySelectorAll('[data-dn]').forEach(b=>b.onclick=()=>{const p=+b.dataset.dn;[o[p+1],o[p]]=[o[p],o[p+1]];save();fill(el,q);el.querySelector(`[data-dn="${p+1}"]`)?.focus()});
+    const c=el.querySelector('[data-check]');if(c)c.onclick=()=>{S.r[q.id]={score:o.every((v,i)=>v===i)?1:0};fill(el,q)}}
+  if(q.type==='table'){el.querySelectorAll('select').forEach(s=>s.onchange=()=>{const v=S.t[q.id]||[];const ri=+s.dataset.r;v[ri]=v[ri]||[];v[ri][+s.dataset.c]=s.value;S.t[q.id]=v;save()});
+    const c=el.querySelector('[data-check]');if(c)c.onclick=()=>{const v=S.t[q.id]||[];let sc=0;q.rows.forEach((row,ri)=>row.a.forEach((a,ci)=>{if((v[ri]||[])[ci]===a)sc++}));S.r[q.id]={score:sc};fill(el,q)}}
+  if(q.type==='label') wireLabel(el,q);
+  if(q.type==='comp') wireComp(el,q);
+  if(q.type==='digest') wireDigest(el,q);
+  if(q.type==='plot') wirePlot(el,q);
+}
+
+/* ---------- diagram labeling ---------- */
+function labelBody(q,r){const v=S.t[q.id]||{};const sorted=q.parts.slice().sort();
+  const field=(i)=>{const key='n'+(i+1),val=v[key]||'',ans=q.parts[i],cls=r?(val===ans?'right':'wrong'):'';
+    return `<div><label><b>${i+1}</b><select data-k="${key}" aria-label="Part ${i+1}" class="${cls}" ${r?'disabled':''}><option value="">Choose…</option>${sorted.map(o=>`<option ${o===val?'selected':''}>${o}</option>`).join('')}</select></label>${r&&val!==ans?`<span class="fix" style="margin:2px 0 4px 34px">${ans}</span>`:''}</div>`};
+  return `<div class="labwrap"><div class="fig" style="margin:0">${figOf(q)}</div><div class="lablist">${q.parts.map((_,i)=>field(i)).join('')}</div></div>
+   <div class="row">${r?retryBtn():`<button class="btn" data-check>Check labels</button>`}</div>`}
+function wireLabel(el,q){el.querySelectorAll('select').forEach(s=>{const k=s.dataset.k;
+   const hl=on=>el.querySelector(`.badge[data-n="${k.slice(1)}"]`)?.classList.toggle('hl',on);
+   s.onfocus=()=>hl(true);s.onblur=()=>hl(false);s.onmouseenter=()=>hl(true);s.onmouseleave=()=>{if(document.activeElement!==s)hl(false)};
+   s.onchange=()=>{const v=S.t[q.id]||{};v[k]=s.value;S.t[q.id]=v;save()}});
+  const c=el.querySelector('[data-check]');if(c)c.onclick=()=>{const v=S.t[q.id]||{};let sc=0;q.parts.forEach((a,i)=>{if(v['n'+(i+1)]===a)sc++});S.r[q.id]={score:sc};fill(el,q)}}
+
+/* ---------- complementary strand ---------- */
+function compBody(q,r){const ans=comp(q.s);const val=r?r.v:(S.d[q.id]||'');
+  let b=twoStrand(q.s)+`<div style="height:12px"></div>`;
+  if(!r) b+=`<label class="strand" style="display:block"><span class="lb">Complementary strand</span><input type="text" class="compin" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="${q.s.length+10}" value="${esc(val)}" placeholder="${'·'.repeat(q.s.length)}"></label><div class="row"><button class="btn" data-check>Check</button><span class="note" data-cnt>${val.replace(/[^ATGC]/gi,'').length}/${q.s.length} bases</span></div>`;
+  else{const g=r.v;b+=`<div class="strand"><span class="lb">Your strand</span><div class="diff">${ans.split('').map((a,i)=>{const c=g[i]||'_';return `<span class="${c===a?'ok':'no'}">${esc(c)}</span>`}).join('')}${g.length>ans.length?`<span class="no">${esc(g.slice(ans.length))}</span>`:''}</div></div>
+    <div class="fb"><b>${r.score?'Correct.':'Not quite.'}</b> ${r.score?'Every base is paired correctly.':`The correct strand is <span class="mono">${ans}</span>. Underlined letters show mistakes.`} Remember: A pairs with T, and C pairs with G.</div><div class="row">${retryBtn()}</div>`}
+  return b}
+function wireComp(el,q){const inp=el.querySelector('input.compin');if(!inp)return;const cnt=el.querySelector('[data-cnt]');
+  inp.oninput=()=>{const p=inp.selectionStart;inp.value=inp.value.toUpperCase().replace(/[^ATGC]/g,'');try{inp.setSelectionRange(p,p)}catch(e){}S.d[q.id]=inp.value;cnt.textContent=`${inp.value.length}/${q.s.length} bases`;save()};
+  const go=()=>{const g=inp.value.toUpperCase().replace(/[^ATGC]/g,'');if(!g)return inp.focus();S.r[q.id]={score:g===comp(q.s)?1:0,v:g};fill(el,q)};
+  el.querySelector('[data-check]').onclick=go;inp.onkeydown=e=>{if(e.key==='Enter')go()}}
+
+/* ---------- restriction digest ---------- */
+function digestBody(q,r){const E=ENZ[q.enz],seq=q.seq,right=cutsOf(seq,q.enz),mine=S.c[q.id]||[];
+  let s=`<p class="note" style="margin:0 0 8px"><b>${q.enz}</b> recognizes <span class="mono">${E.site}</span> and cuts at <span class="mono">${E.show}</span>. ${q.ds?'Both strands are shown; HaeIII cuts straight through both. Mark cuts between base pairs.':'Mark cuts on this strand.'}</p><div class="seq${q.ds?' ds':''}" role="group" aria-label="DNA sequence, ${seq.length} ${q.ds?'base pairs':'bases'}">`;
+  for(let i=0;i<seq.length;i++){
+    if(i>0){let cls=mine.includes(i)?'on':'';if(r){if(mine.includes(i)&&right.includes(i))cls='on good';else if(mine.includes(i)&&!right.includes(i))cls='on extra';else if(!mine.includes(i)&&right.includes(i))cls='miss'}
+      s+=`<button class="gap ${cls}" data-g="${i}" ${r?'disabled':''} aria-pressed="${mine.includes(i)}" aria-label="Cut between ${q.ds?'base pair':'base'} ${i} and ${i+1}"></button>`}
+    s+=q.ds?`<span class="base ds"><b>${seq[i]}</b><i>${PAIR[seq[i]]}</i></span>`:`<span class="base">${seq[i]}</span>`}
+  s+=`</div>`;
+  if(!r) s+=`<div class="row"><button class="btn" data-check>Check cuts</button><button class="btn ghost" data-clear>Clear</button><span class="note">${mine.length} cut${mine.length===1?'':'s'} placed</span></div>`;
+  else{const good=mine.filter(x=>right.includes(x)).length,extra=mine.length-good,f=fragsOf(seq.length,right);
+    s+=`<div class="fb"><b>${r.score===right.length&&!extra?'All cuts correct.':`${good} of ${right.length} correct cut${right.length===1?'':'s'}${extra?`, ${extra} extra`:''}.`}</b> ${r.score===right.length&&!extra?'':'Green lines are correct cuts, green dashed lines are missed cuts, and red lines are cuts in the wrong place. '}${q.enz} cuts ${right.length} time${right.length===1?'':'s'}, making ${f.length} fragments: ${f.join(', ')} ${q.ds?'bp':'bases'}.</div>
+    <div class="frags"><div class="fragrow"><b>Fragments</b><div class="fragbar">${f.map(n=>`<span style="flex:${n} 0 0">${n}</span>`).join('')}</div></div></div><div class="row">${retryBtn()}</div>`}
+  return s}
+function wireDigest(el,q){
+  el.querySelectorAll('.gap:not([disabled])').forEach(g=>g.onclick=()=>{const i=+g.dataset.g,a=S.c[q.id]||(S.c[q.id]=[]);const k=a.indexOf(i);if(k<0)a.push(i);else a.splice(k,1);save();fill(el,q);el.querySelector(`.gap[data-g="${i}"]`)?.focus()});
+  const c=el.querySelector('[data-check]');if(c)c.onclick=()=>{const right=cutsOf(q.seq,q.enz),mine=S.c[q.id]||[];const good=mine.filter(x=>right.includes(x)).length;S.r[q.id]={score:Math.max(0,good-(mine.length-good))};fill(el,q)};
+  const cl=el.querySelector('[data-clear]');if(cl)cl.onclick=()=>{S.c[q.id]=[];save();fill(el,q)};
+  const rt=el.querySelector('[data-retry]');if(rt)rt.onclick=()=>{delete S.r[q.id];S.c[q.id]=[];fill(el,q);done(el,q)};
+}
+/* ---------- reference card ---------- */
+const REF=`<h3>Cut, count, and plot</h3><ul>
+<li>A restriction enzyme cuts only at its exact <b>recognition site</b>. The ^ (or │) shows where the cut happens.</li>
+<li>HaeIII cuts straight through both strands (blunt ends), so you can count fragment sizes on the top strand.</li>
+<li><b>Count:</b> fragments = cuts + 1. Each base on the top strand has a partner, so the number of top-strand bases = the number of base pairs (bp).</li>
+<li><b>Check:</b> your fragment sizes should add up to the total length.</li>
+<li><b>Plot:</b> large fragments stay near the wells; small fragments travel farthest. Use the ladder to place each band. Fragments of the same size make one band.</li></ul>
+<div class="tbl"><table><thead><tr><th>Enzyme</th><th>Recognition site</th><th>Ends</th></tr></thead><tbody>
+${Object.entries(ENZ).map(([k,e])=>`<tr><td><b>${k}</b></td><td><code>${e.show.replace('^','<i>^</i>')}</code></td><td>${e.ends}</td></tr>`).join('')}</tbody></table></div>`;
+
+/* ---------- gel explorer ---------- */
+const GX=[{l:'Ladder',b:[5000,3000,2000,1000,500,200]},{l:'A',b:[4000,1500]},{l:'B',b:[3000,900,300]},{l:'C',b:[2000,600]}];
+const GEL_EX=`<div class="explore">
+<div class="steps" role="group" aria-label="Gel setup"><button class="stepbtn" data-rev="0" aria-pressed="true">Leads correct</button><button class="stepbtn" data-rev="1" aria-pressed="false">Leads switched</button><button class="stepbtn" data-stain aria-pressed="false">Stain the gel</button></div>
+<div class="box" id="gxbox"></div>
+<div class="sliders"><label for="gx-t">Run time <output id="gx-to"></output><input type="range" id="gx-t" min="0" max="45" step="1" value="0"></label></div>
+<div class="fb" id="gx-msg" style="margin-top:0" aria-live="polite"></div></div>`;
+function gxSVG(t,rev,stain){
+  const L=120,R=640,T=44,B=296,well=58,run=226,lanes=GX.length,lw=(R-L)/lanes;
+  const frac=bp=>0.12+0.74*(Math.log(8000)-Math.log(bp))/(Math.log(8000)-Math.log(150));
+  const dir=rev?-1:1,k=t/30,yOf=f=>well+8+dir*k*f*run;
+  const top=rev?'+':'−',bot=rev?'−':'+',topC=rev?'#c5302b':'#22292c',botC=rev?'#22292c':'#c5302b';
+  let s=`<svg class="gx" viewBox="0 0 760 340" role="img" aria-label="Gel after ${t} minutes${rev?', leads switched':''}">
+  <defs><clipPath id="gxclip"><rect x="${L}" y="${T}" width="${R-L}" height="${B-T}" rx="6"/></clipPath><filter id="gxg" x="-20%" y="-200%" width="140%" height="500%"><feGaussianBlur stdDeviation="1.6"/></filter></defs>
+  <rect x="${L-30}" y="2" width="${R-L+60}" height="328" rx="10" fill="color-mix(in srgb,#5aa9c9 14%,transparent)" stroke="var(--line)"/>
+  <rect x="${L}" y="10" width="${R-L}" height="8" rx="3" fill="${topC}"/><rect x="${L}" y="312" width="${R-L}" height="8" rx="3" fill="${botC}"/>
+  <text x="${L-12}" y="20" text-anchor="end" class="pol">${top}</text><text x="${L-12}" y="321" text-anchor="end" class="pol">${bot}</text>
+  <text x="${R+12}" y="18" class="ax">${rev?'red lead':'black lead'}</text><text x="${R+12}" y="321" class="ax">${rev?'black lead':'red lead'}</text>
+  <rect x="${L}" y="${T}" width="${R-L}" height="${B-T}" rx="6" fill="${stain?'#0d1b22':'color-mix(in srgb,#cfe3ea 55%,var(--surface))'}" stroke="var(--line-strong)"/>`;
+  s+=`<g clip-path="url(#gxclip)">`;
+  GX.forEach((ln,i)=>{const cx=L+lw*i+lw/2;
+    s+=`<rect x="${cx-26}" y="${well}" width="52" height="8" rx="2" fill="${stain?'#22343c':'var(--surface)'}" stroke="var(--line-strong)"/>`;
+    if(stain) ln.b.forEach(bp=>{const y=yOf(frac(bp));s+=`<rect x="${cx-26}" y="${y-3.5}" width="52" height="7" rx="3" fill="#bfe9ff" filter="url(#gxg)"/><rect x="${cx-24}" y="${y-1.6}" width="48" height="3.2" rx="1.6" fill="#f2fbff"/>`});
+    const dy=yOf(1);s+=`<rect x="${cx-26}" y="${dy-4}" width="52" height="8" rx="3" fill="#3b63d6" opacity="${t?0.75:0.9}"/>`;
+  });
+  s+=`</g>`;
+  GX.forEach((ln,i)=>{const cx=L+lw*i+lw/2;s+=`<text x="${cx}" y="${T-6+ (0)}" text-anchor="middle" class="lh2">${ln.l}</text>`});
+  return s+'</svg>'}
+function wireGel(el){let rev=0,stain=0;const box=el.querySelector('#gxbox'),t=el.querySelector('#gx-t'),msg=el.querySelector('#gx-msg');
+  const draw=()=>{const m=+t.value;el.querySelector('#gx-to').textContent=m+' min';box.innerHTML=gxSVG(m,rev,stain);
+    el.querySelectorAll('[data-rev]').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.rev===rev));el.querySelector('[data-stain]').setAttribute('aria-pressed',!!stain);
+    el.querySelector('[data-stain]').textContent=stain?'Unstain (back to running)':'Stain the gel';
+    let tx;
+    if(m===0) tx='<b>Ready.</b> Samples and loading dye (blue) are in the wells. Drag the slider to turn on the power.';
+    else if(rev) tx=m<4?'<b>Watch the dye.</b> It is moving up, out of the wells, toward the + electrode at the top.':'<b>The DNA ran off the gel.</b> With the leads switched, the wells are next to the + electrode, so the negative DNA left the gel into the buffer. Nothing is left to analyze.';
+    else if(m<27) tx=`<b>Running.</b> The DNA moves toward the + (red) electrode. ${stain?'Smaller fragments are pulling ahead of larger ones.':'You can only see the blue dye; the DNA is invisible until the gel is stained.'}`;
+    else if(m<=31) tx='<b>Turn off the power now.</b> The dye is near the bottom edge. This is the right time to stop and stain.';
+    else tx=`<b>Too long!</b> The dye has run off the gel${stain?', and the smallest fragments are following it':'. Stain the gel to see what is left'}.`;
+    msg.innerHTML=tx};
+  el.querySelectorAll('[data-rev]').forEach(b=>b.onclick=()=>{rev=+b.dataset.rev;draw()});
+  el.querySelector('[data-stain]').onclick=()=>{stain=stain?0:1;draw()};
+  t.oninput=draw;draw()}
+
+/* ---------- paper gel plotting ---------- */
+const PCUR={};
+const laneAns=ln=>uniq(ln.f||fragsSeq(ln.seq,ln.enz));
+function plotGeo(q){const n=q.lanes.length+1,max=q.max,row=12,lw=112,left=64,top=34;return {n,max,row,lw,left,top,W:left+n*lw+16,H:top+22+max*row,y:bp=>top+22+(max-bp)*row,x:i=>left+i*lw+lw/2}}
+function plotSVG(q,r){const g=plotGeo(q),mine=S.c[q.id]||{},lad=q.ladder||[5,10,15,20,25].filter(v=>v<=q.max);
+  let s=`<svg class="pgel" viewBox="0 0 ${g.W} ${g.H+10}" style="max-width:${g.W}px" role="group" aria-label="Paper gel">
+  <rect x="${g.left-4}" y="${g.top}" width="${g.n*g.lw+8}" height="${g.H-g.top}" rx="6" fill="var(--surface)" stroke="var(--line-strong)" stroke-width="1.4"/>`;
+  for(let bp=1;bp<=g.max;bp++){const y=g.y(bp),five=bp%5===0;s+=`<line x1="${g.left-(five?12:7)}" x2="${g.left-4}" y1="${y}" y2="${y}" stroke="var(--line-strong)"/>`;
+    if(five){s+=`<text x="${g.left-16}" y="${y+4}" text-anchor="end" class="ax">${bp}</text><line x1="${g.left}" x2="${g.left+g.n*g.lw}" y1="${y}" y2="${y}" stroke="var(--grid)" stroke-dasharray="3 4"/>`}}
+  s+=`<text x="${g.left-16}" y="${g.top-12}" text-anchor="end" class="ax">bp</text>`;
+  const lanes=[{l:'Ladder'},...q.lanes];
+  lanes.forEach((ln,i)=>{const cx=g.x(i);s+=`<text x="${cx}" y="${g.top-10}" text-anchor="middle" class="lh2">${esc(ln.l)}</text><rect x="${cx-30}" y="${g.top+6}" width="60" height="9" rx="2" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.2"/>`});
+  lad.forEach(bp=>s+=`<rect x="${g.x(0)-30}" y="${g.y(bp)-3}" width="60" height="6" rx="2" fill="var(--muted)"/>`);
+  q.lanes.forEach((ln,li)=>{const i=li+1,cx=g.x(i),m=mine[li]||[],ans=laneAns(ln);
+    const set=new Set([...m,...(r?ans:[])]);
+    set.forEach(bp=>{const y=g.y(bp),has=m.includes(bp),ok=ans.includes(bp);
+      let cls='band';if(r)cls=has&&ok?'band good':has?'band extra':'band miss';
+      s+=`<rect class="${cls}" x="${cx-30}" y="${y-3}" width="60" height="6" rx="2"/>`});
+    s+=`<g class="plane" data-l="${li}" ${r?'':'tabindex="0"'} role="group" aria-label="${esc(ln.l)} lane${r?'':'. Use up and down arrows to pick a size, then Enter to add or remove a band'}">`;
+    if(!r) for(let bp=1;bp<=g.max;bp++) s+=`<rect class="hit" data-bp="${bp}" x="${cx-g.lw/2+4}" y="${g.y(bp)-g.row/2}" width="${g.lw-8}" height="${g.row}"/>`;
+    s+=`<g class="cur" style="display:none"><line x1="${cx-40}" x2="${cx+40}" y1="0" y2="0"/><text x="${cx+44}" y="4"></text></g></g>`;
+  });
+  return s+'</svg>'}
+function plotList(q,r){const mine=S.c[q.id]||{};return q.lanes.map((ln,li)=>{const m=(mine[li]||[]).slice().sort((a,b)=>b-a),ans=laneAns(ln),ok=r&&m.length===ans.length&&ans.every(v=>m.includes(v));
+  return `<div><b>${esc(ln.l)}:</b> ${m.length?m.join(', ')+' bp':'<span class="note">no bands yet</span>'}${r?(ok?' <span class="qstat ok">✓</span>':` <span class="fix" style="display:inline;margin-left:6px">Correct bands: ${ans.join(', ')} bp</span>`):''}</div>`}).join('')}
+function plotBody(q,r){
+  let b=`<div class="fig plotfig">${plotSVG(q,r)}</div><div class="plist" aria-live="polite">${plotList(q,r)}</div>`;
+  if(!r) b+=`<div class="row"><button class="btn" data-check>Check gel</button><button class="btn ghost" data-clear>Clear</button></div>`;
+  else{const right=q.lanes.filter((ln,li)=>{const m=(S.c[q.id]||{})[li]||[],a=laneAns(ln);return m.length===a.length&&a.every(v=>m.includes(v))}).length;
+    const dupNote=q.lanes.some(ln=>{const f=ln.f||fragsSeq(ln.seq,ln.enz);return new Set(f).size<f.length})?' Two fragments of the same size make one band.':'';
+    b+=`<div class="fb"><b>${right===q.lanes.length?'Every lane is correct.':`${right} of ${q.lanes.length} lane${q.lanes.length>1?'s':''} correct.`}</b> ${right===q.lanes.length?'':'Green bands are correct, red bands are in the wrong place, and dashed bands are ones you missed. '}Larger fragments sit closer to the wells.${dupNote}</div><div class="row">${retryBtn()}</div>`}
+  return b}
+function wirePlot(el,q){
+  const g=plotGeo(q);
+  const toggle=(li,bp)=>{const m=S.c[q.id]||(S.c[q.id]={});const a=m[li]||(m[li]=[]);const k=a.indexOf(bp);if(k<0)a.push(bp);else a.splice(k,1);PCUR[q.id]={l:li,bp};save();fill(el,q);
+    const lane=el.querySelector(`.plane[data-l="${li}"]`);if(lane&&PCUR[q.id].kb){lane.focus();showCur(lane,bp)}};
+  const showCur=(lane,bp)=>{const c=lane.querySelector('.cur');if(!c)return;c.style.display='';c.setAttribute('transform',`translate(0 ${g.y(bp)})`);c.querySelector('text').textContent=bp+' bp'};
+  const hideCur=lane=>{const c=lane.querySelector('.cur');if(c)c.style.display='none'};
+  el.querySelectorAll('.plane').forEach(lane=>{const li=+lane.dataset.l;
+    lane.querySelectorAll('.hit').forEach(h=>{const bp=+h.dataset.bp;h.onmouseenter=()=>showCur(lane,bp);h.onclick=()=>{toggle(li,bp)}});
+    lane.onmouseleave=()=>{if(document.activeElement!==lane)hideCur(lane)};
+    lane.onfocus=()=>{const p=PCUR[q.id];showCur(lane,p&&p.l===li?p.bp:Math.round(g.max/2))};
+    lane.onblur=()=>hideCur(lane);
+    lane.onkeydown=e=>{const p=PCUR[q.id]&&PCUR[q.id].l===li?PCUR[q.id]:{l:li,bp:Math.round(g.max/2)};
+      if(e.key==='ArrowUp'){p.bp=Math.min(g.max,p.bp+1);PCUR[q.id]=p;showCur(lane,p.bp);e.preventDefault()}
+      else if(e.key==='ArrowDown'){p.bp=Math.max(1,p.bp-1);PCUR[q.id]=p;showCur(lane,p.bp);e.preventDefault()}
+      else if(e.key==='Enter'||e.key===' '){e.preventDefault();PCUR[q.id]={l:li,bp:p.bp,kb:1};toggle(li,p.bp)}};
+  });
+  const p=PCUR[q.id];if(p&&p.kb){const lane=el.querySelector(`.plane[data-l="${p.l}"]`);if(lane){lane.focus();showCur(lane,p.bp)}}
+  const c=el.querySelector('[data-check]');if(c)c.onclick=()=>{const m=S.c[q.id]||{};let sc=0;q.lanes.forEach((ln,li)=>{const a=laneAns(ln),x=m[li]||[];if(x.length===a.length&&a.every(v=>x.includes(v)))sc++});PCUR[q.id]=null;S.r[q.id]={score:sc};fill(el,q)};
+  const cl=el.querySelector('[data-clear]');if(cl)cl.onclick=()=>{S.c[q.id]={};save();fill(el,q)};
+  const rt=el.querySelector('[data-retry]');if(rt)rt.onclick=()=>{delete S.r[q.id];S.c[q.id]={};fill(el,q);done(el,q)};
+}
+
+/* ---------- results ---------- */
+function renderResults(m){
+  m.insertAdjacentHTML('beforeend',`<div class="lthead"><div class="eyebrow">Report</div><h2>My results</h2><p>Rate yourself on each learning target, then copy your report into Google Classroom if your teacher asks for it.</p></div>`);
+  const wrap=document.createElement('div');wrap.className='res';m.appendChild(wrap);
+  wrap.insertAdjacentHTML('beforeend',`<div class="rescard"><label for="nm" style="font:700 15px var(--f-display)">Your name</label><div class="row" style="margin-top:6px"><input type="text" id="nm" value="${esc(S.name)}" placeholder="First and last name" style="width:280px"></div></div>`);
+  LT.forEach((lt,li)=>{const rt=S.rate[lt.key]||{};
+    wrap.insertAdjacentHTML('beforeend',`<div class="rescard"><div class="eyebrow">LT${li+1}</div><h3>${lt.title}</h3><p class="note" style="margin:0 0 8px">${lt.target}</p>${[0,1,2].map(v=>{const x=lvScore(li,v);return `<div class="lvrow"><span>${LVN[v]}</span><span class="meter"><i style="width:${(x.s/x.m*100).toFixed(0)}%"></i></span><span class="sc">${x.s}/${x.m}</span></div>`}).join('')}
+    <div class="rates">${['before','after'].map(k=>`<label>Self-rating ${k}<select data-lt="${lt.key}" data-k="${k}"><option value="">–</option>${['1 · Not yet','2 · Getting there','3 · I’ve got it','4 · I could teach it'].map((o,i)=>`<option value="${i+1}" ${rt[k]==i+1?'selected':''}>${o}</option>`).join('')}</select></label>`).join('')}</div></div>`)});
+  wrap.insertAdjacentHTML('beforeend',`<div class="rescard"><h3>Report</h3><pre class="out" id="out"></pre><div class="row"><button class="btn" id="cp">Copy report</button><span class="note" id="cpm"></span></div>
+   <div class="row" style="margin-top:20px"><button class="btn ghost" id="rs">Start over</button><span class="note" id="rsm"></span></div></div>`);
+  const out=()=>{let t=`DNA Analysis Review (PBS 1.1.6)\nName: ${S.name||'—'}\n`;LT.forEach((lt,li)=>{const rt=S.rate[lt.key]||{};t+=`\nLT${li+1} ${lt.title}\n`+[0,1,2].map(v=>{const x=lvScore(li,v);return `  ${LVN[v]}: ${x.s}/${x.m} points (${x.done}/${x.tot} questions done)`}).join('\n')+`\n  Self-rating: before ${rt.before||'–'}, after ${rt.after||'–'}\n`});return t};
+  const upd=()=>{m.querySelector('#out').textContent=out()};upd();
+  m.querySelector('#nm').oninput=e=>{S.name=e.target.value;save();upd()};
+  m.querySelectorAll('.rates select').forEach(s=>s.onchange=()=>{const k=s.dataset.lt;S.rate[k]=S.rate[k]||{};S.rate[k][s.dataset.k]=s.value;save();upd()});
+  m.querySelector('#cp').onclick=()=>{const t=out(),msg=m.querySelector('#cpm');const sel=()=>{const r=document.createRange();r.selectNodeContents(m.querySelector('#out'));const s=getSelection();s.removeAllRanges();s.addRange(r);msg.textContent='Selected. Press Ctrl+C to copy.'};
+    try{navigator.clipboard.writeText(t).then(()=>msg.textContent='Copied.',sel)}catch(e){sel()}};
+  let armed=false;m.querySelector('#rs').onclick=e=>{if(!armed){armed=true;e.target.textContent='Click again to erase all answers';m.querySelector('#rsm').textContent='This clears every answer saved on this device.';return}
+    S=fresh();save();render()};
+}
+
+/* ---------- boot ---------- */
+const h=(location.hash||'').slice(1);if(['lt1','lt2','lt3','results'].includes(h))S.view=h;
+render();
+</script>
+</body></html>
